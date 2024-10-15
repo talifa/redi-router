@@ -1,4 +1,26 @@
+import {
+  Form,
+  NavLink,
+  Outlet,
+  useLoaderData,
+  useNavigation,
+} from "react-router-dom";
+import { createContact, getContacts } from "../contacts";
+
+export const loader = async () => {
+  const contacts = await getContacts();
+  return { contacts };
+};
+
+export const action = async () => {
+  const contact = await createContact();
+  return { contact };
+};
+
 export default function Root() {
+  const { contacts } = useLoaderData();
+  const navigation = useNavigation();
+
   return (
     <>
       <div id="sidebar">
@@ -15,22 +37,45 @@ export default function Root() {
             <div id="search-spinner" aria-hidden hidden={true} />
             <div className="sr-only" aria-live="polite"></div>
           </form>
-          <form method="post">
+          <Form method="post">
             <button type="submit">New</button>
-          </form>
+          </Form>
         </div>
         <nav>
           <ul>
-            <li>
-              <a href={`/contacts/1`}>Your Name</a>
-            </li>
-            <li>
-              <a href={`/contacts/2`}>Your Friend</a>
-            </li>
+            {contacts.length ? (
+              contacts.map((contact) => {
+                return (
+                  <li key={contact.id}>
+                    <NavLink
+                      to={`contacts/${contact.id}`}
+                      className={({ isActive, isPending }) =>
+                        isActive ? "active" : isPending ? "pending" : ""
+                      }
+                    >
+                      {contact.first || contact.last ? (
+                        <>
+                          {contact.first} {contact.last}
+                        </>
+                      ) : (
+                        <i>No Name</i>
+                      )}
+                    </NavLink>
+                  </li>
+                );
+              })
+            ) : (
+              <p> No contacts yet</p>
+            )}
           </ul>
         </nav>
       </div>
-      <div id="detail"></div>
+      <div
+        id="detail"
+        className={navigation.state === "loading" ? "loading" : ""}
+      >
+        <Outlet />
+      </div>
     </>
   );
 }
